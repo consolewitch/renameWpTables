@@ -1,0 +1,4 @@
+## place the file to be converted in /tmp/import.sql
+## make sure there isn't already a database called deleteme
+## be sure to set your new wp prefix in the variable below.
+

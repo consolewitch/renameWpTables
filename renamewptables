@@ -1,0 +1,32 @@
+#! /bin/bash
+
+
+PREFIX="wp_6jqmvvxfy7"
+FIRSTRUN=true
+
+echo -n "mysql root password ->"
+read -s SQLPW
+
+mysql -u root -p$SQLPW -e 'create database deleteme;'
+mysql -u root -p$SQLPW deleteme < /tmp/import.sql
+mysql -u root -p$SQLPW -e 'use deleteme; show tables;' > /tmp/output_tmp
+tail -n +2 /tmp/output_tmp >/tmp/output
+echo -n "RENAME TABLE " > /tmp/carp.sql
+while read LINE
+do
+    if $FIRSTRUN; then
+        TRUNCLINE=$(echo $LINE | cut -c 3-)
+        echo -n "\`deleteme\`.\`$LINE\` to \`deleteme\`.\`wp_6jqmvvxfy7$TRUNCLINE\` ">>/tmp/carp.sql
+	FIRSTRUN=false
+    else
+    	TRUNCLINE=$(echo $LINE | cut -c 3-)
+    	echo -n ", \`deleteme\`.\`$LINE\` to \`deleteme\`.\`wp_6jqmvvxfy7$TRUNCLINE\` ">>/tmp/carp.sql
+    fi
+done </tmp/output
+echo -n ";" >>/tmp/carp.sql
+mysql -u root -p$SQLPW deleteme </tmp/carp.sql
+mysqldump -u root -p$SQLPW deleteme >/tmp/converted.sql
+rm /tmp/carp.sql
+rm /tmp/output_tmp
+rm /tmp/output
+mysql -u root -p$SQLPW -e "drop database deleteme;"
